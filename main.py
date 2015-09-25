@@ -49,27 +49,27 @@ class Main(QtGui.QMainWindow):
         self.cutAction = QtGui.QAction(QtGui.QIcon("icons/cut.png"),"Cut to clipboard",self)
         self.cutAction.setStatusTip("Delete and copy text to clipboard")
         self.cutAction.setShortcut("Ctrl+X")
-        self.cutAction.triggered.connect(self.text.cut)
+        self.cutAction.triggered.connect(self.getActiveText().cut)
 
         self.copyAction = QtGui.QAction(QtGui.QIcon("icons/copy.png"),"Copy to clipboard",self)
         self.copyAction.setStatusTip("Copy text to clipboard")
         self.copyAction.setShortcut("Ctrl+C")
-        self.copyAction.triggered.connect(self.text.copy)
+        self.copyAction.triggered.connect(self.getActiveText().copy)
 
         self.pasteAction = QtGui.QAction(QtGui.QIcon("icons/paste.png"),"Paste from clipboard",self)
         self.pasteAction.setStatusTip("Paste text from clipboard")
         self.pasteAction.setShortcut("Ctrl+V")
-        self.pasteAction.triggered.connect(self.text.paste)
+        self.pasteAction.triggered.connect(self.getActiveText().paste)
 
         self.undoAction = QtGui.QAction(QtGui.QIcon("icons/undo.png"),"Undo last action",self)
         self.undoAction.setStatusTip("Undo last action")
         self.undoAction.setShortcut("Ctrl+Z")
-        self.undoAction.triggered.connect(self.text.undo)
+        self.undoAction.triggered.connect(self.getActiveText().undo)
 
         self.redoAction = QtGui.QAction(QtGui.QIcon("icons/redo.png"),"Redo last undone thing",self)
         self.redoAction.setStatusTip("Redo last undone thing")
         self.redoAction.setShortcut("Ctrl+Y")
-        self.redoAction.triggered.connect(self.text.redo)
+        self.redoAction.triggered.connect(self.getActiveText().redo)
 
         self.toolbar.addAction(self.cutAction)
         self.toolbar.addAction(self.copyAction)
@@ -124,16 +124,25 @@ class Main(QtGui.QMainWindow):
 
         view = menubar.addMenu("View")
 
+    # https://srinikom.github.io/pyside-docs/PySide/QtGui/QTabWidget.html
+    def initTab(self):
+        tabWidget = QtGui.QTabWidget(self);
+        tabWidget.setDocumentMode(True)
+        tabWidget.setTabsClosable(True)
+        tabWidget.tabCloseRequested.connect(self.closeTab)
+
+        self.tabWidget = tabWidget
+
     def initUI(self):
 
-        # QTextEdit
-        # http://doc.qt.io/qt-4.8/qtextedit.html
-        self.text = QtGui.QTextEdit(self)
-        self.setCentralWidget(self.text)
+        self.initTab()
+        self.addTextTab()
 
         self.initToolbar()
         self.initFormatbar()
         self.initMenubar()
+
+        self.setCentralWidget(self.tabWidget)
 
         # Initialize a statusbar for the window
         self.statusbar = self.statusBar()
@@ -144,30 +153,38 @@ class Main(QtGui.QMainWindow):
         self.setWindowTitle("Writer")
         self.setWindowIcon(QtGui.QIcon("icons/icon.png"))
 
-        # Text
+    # action
+    def addTextTab(self):
+        # QTextEdit
+        # http://doc.qt.io/qt-4.8/qtextedit.html
+        text = QtGui.QTextEdit(self)
+
         # Tab stop
-        self.text.acceptRichText = False
-        self.text.setTabStopWidth(33)
+        text.acceptRichText = False
+        text.setTabStopWidth(33)
 
         # cursor position
-        self.text.cursorPositionChanged.connect(self.cursorPosition)
+        text.cursorPositionChanged.connect(self.cursorPosition)
 
+        self.tabWidget.addTab(text, "NEW1")
+
+    def getActiveText(self):
+        return self.tabWidget.currentWidget()
 
     # Edit commands
-    def new(self):
 
-        spawn = Main(self)
-        spawn.show()
+    def new(self):
+        self.addTextTab()
 
     def open(self):
 
         # Get filename and show only .txt files
-        self.filename = QtGui.QFileDialog.getOpenFileName(self, 'Open File', ".", "(*.txt)")
+        self.filename = QtGui.QFileDialog.getOpenFileName(self, 'Open File', ".", "(*.txt;*.py)")
 
-        if self.filename:
+        if self.filename and self.filename[0]:
             self.filename = self.filename[0]
             with codecs.open(self.filename, "r", "utf-8") as file:
-                self.text.setText(file.read())
+                self.getActiveText().setText(file.read())
 
     def save(self):
 
@@ -183,7 +200,7 @@ class Main(QtGui.QMainWindow):
         # We just store the contents of the text file along with the
         # format in html, which Qt does in a very nice way for us
         with codecs.open(self.filename, "w", "utf-8") as file:
-            file.write(self.text.toPlainText())
+            file.write(self.getActiveText().toPlainText())
 
     def preview(self):
 
@@ -191,7 +208,7 @@ class Main(QtGui.QMainWindow):
         preview = QtGui.QPrintPreviewDialog()
 
         # If a print is requested, open print dialog
-        preview.paintRequested.connect(lambda p: self.text.print_(p))
+        preview.paintRequested.connect(lambda p: self.getActiveText().print_(p))
 
         preview.exec_()
 
@@ -201,17 +218,22 @@ class Main(QtGui.QMainWindow):
         dialog = QtGui.QPrintDialog()
 
         if dialog.exec_() == QtGui.QDialog.Accepted:
-            self.text.document().print_(dialog.printer())
+            self.getActiveText().document().print_(dialog.printer())
+
+    # signal handler
 
     def cursorPosition(self):
 
-        cursor = self.text.textCursor()
+        cursor = self.getActiveText().textCursor()
 
         # Mortals like 1-indexed things
         line = cursor.blockNumber() + 1
         col = cursor.columnNumber()
 
         self.statusbar.showMessage("Line: {} | Column: {}".format(line,col))
+
+    def closeTab(self, index):
+        self.tabWidget.removeTab(index);
 
 def main():
 
