@@ -20,7 +20,7 @@ class Main(QtGui.QMainWindow):
 
         self.initUI()
 
-    def initToolbar(self):
+    def initAction(self):
 
         self.newAction = QtGui.QAction(QtGui.QIcon("icons/new.png"),"New",self)
         self.newAction.setStatusTip("Create a new document from scratch.")
@@ -37,13 +37,9 @@ class Main(QtGui.QMainWindow):
         self.saveAction.setShortcut("Ctrl+S")
         self.saveAction.triggered.connect(self.save)
 
-        self.toolbar = self.addToolBar("Options")
-
-        self.toolbar.addAction(self.newAction)
-        self.toolbar.addAction(self.openAction)
-        self.toolbar.addAction(self.saveAction)
-
-        self.toolbar.addSeparator()
+        self.quitAction = QtGui.QAction(QtGui.QIcon("icons/quit.png"), "Quit", self)
+        self.quitAction.setShortcut("Ctrl+Shift+W")
+        self.quitAction.triggered.connect(QtCore.QCoreApplication.instance().quit)
 
         # Copy & Paste
         self.cutAction = QtGui.QAction(QtGui.QIcon("icons/cut.png"),"Cut to clipboard",self)
@@ -71,14 +67,6 @@ class Main(QtGui.QMainWindow):
         self.redoAction.setShortcut("Ctrl+Y")
         self.redoAction.triggered.connect(self.getActiveText().redo)
 
-        self.toolbar.addAction(self.cutAction)
-        self.toolbar.addAction(self.copyAction)
-        self.toolbar.addAction(self.pasteAction)
-        self.toolbar.addAction(self.undoAction)
-        self.toolbar.addAction(self.redoAction)
-
-        self.toolbar.addSeparator()
-
         # printing
         self.printAction = QtGui.QAction(QtGui.QIcon("icons/print.png"),"Print document",self)
         self.printAction.setStatusTip("Print document")
@@ -90,6 +78,27 @@ class Main(QtGui.QMainWindow):
         self.previewAction.setShortcut("Ctrl+Shift+P")
         self.previewAction.triggered.connect(self.preview)
 
+
+    def initToolbar(self):
+
+        self.toolbar = self.addToolBar("Options")
+
+        self.toolbar.addAction(self.newAction)
+        self.toolbar.addAction(self.openAction)
+        self.toolbar.addAction(self.saveAction)
+
+        self.toolbar.addSeparator()
+
+        # Copy & Paste
+        self.toolbar.addAction(self.cutAction)
+        self.toolbar.addAction(self.copyAction)
+        self.toolbar.addAction(self.pasteAction)
+        self.toolbar.addAction(self.undoAction)
+        self.toolbar.addAction(self.redoAction)
+
+        self.toolbar.addSeparator()
+
+        # printing
         self.toolbar.addAction(self.printAction)
         self.toolbar.addAction(self.previewAction)
 
@@ -110,9 +119,9 @@ class Main(QtGui.QMainWindow):
         file.addAction(self.newAction)
         file.addAction(self.openAction)
         file.addAction(self.saveAction)
-
         file.addAction(self.printAction)
         file.addAction(self.previewAction)
+        file.addAction(self.quitAction)
 
         edit = menubar.addMenu("Edit")
 
@@ -138,6 +147,8 @@ class Main(QtGui.QMainWindow):
         self.initTab()
         self.addTextTab()
 
+        self.initAction()
+
         self.initToolbar()
         self.initFormatbar()
         self.initMenubar()
@@ -154,7 +165,10 @@ class Main(QtGui.QMainWindow):
         self.setWindowIcon(QtGui.QIcon("icons/icon.png"))
 
     # action
-    def addTextTab(self):
+    def addTextTab(self, title = None):
+        if title is None:
+            title = "NEW1"
+
         # QTextEdit
         # http://doc.qt.io/qt-4.8/qtextedit.html
         text = QtGui.QTextEdit(self)
@@ -166,7 +180,8 @@ class Main(QtGui.QMainWindow):
         # cursor position
         text.cursorPositionChanged.connect(self.cursorPosition)
 
-        self.tabWidget.addTab(text, "NEW1")
+        tab = self.tabWidget.addTab(text, title)
+        return text
 
     def getActiveText(self):
         return self.tabWidget.currentWidget()
@@ -177,14 +192,15 @@ class Main(QtGui.QMainWindow):
         self.addTextTab()
 
     def open(self):
-
         # Get filename and show only .txt files
         self.filename = QtGui.QFileDialog.getOpenFileName(self, 'Open File', ".", "(*.txt;*.py)")
 
         if self.filename and self.filename[0]:
             self.filename = self.filename[0]
+            tab = self.addTextTab(self.filename)
             with codecs.open(self.filename, "r", "utf-8") as file:
-                self.getActiveText().setText(file.read())
+                tab.setText(file.read())
+            self.tabWidget.setCurrentWidget(tab)
 
     def save(self):
 
