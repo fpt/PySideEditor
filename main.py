@@ -67,6 +67,17 @@ class Main(QtGui.QMainWindow):
         self.redoAction.setShortcut("Ctrl+Y")
         self.redoAction.triggered.connect(self.getActiveText().redo)
 
+        # Font
+        self.fontLargerAction = QtGui.QAction(QtGui.QIcon("icons/font_larger.png"), "Use larger font",self)
+        self.fontLargerAction.setStatusTip("Use larger font")
+        self.fontLargerAction.setShortcut("Ctrl+=")
+        self.fontLargerAction.triggered.connect(self.font_larger)
+
+        self.fontSmallerAction = QtGui.QAction(QtGui.QIcon("icons/font_smaller.png"), "Use smaller font",self)
+        self.fontSmallerAction.setStatusTip("Use smaller font")
+        self.fontSmallerAction.setShortcut("Ctrl+-")
+        self.fontSmallerAction.triggered.connect(self.font_smaller)
+
         # printing
         self.printAction = QtGui.QAction(QtGui.QIcon("icons/print.png"),"Print document",self)
         self.printAction.setStatusTip("Print document")
@@ -132,6 +143,7 @@ class Main(QtGui.QMainWindow):
         edit.addAction(self.pasteAction)
 
         view = menubar.addMenu("View")
+        view.addAction(self.fontLargerAction)
 
     # https://srinikom.github.io/pyside-docs/PySide/QtGui/QTabWidget.html
     def initTab(self):
@@ -250,6 +262,18 @@ class Main(QtGui.QMainWindow):
 
     def closeTab(self, index):
         self.tabWidget.removeTab(index);
+
+    def font_larger(self):
+        cursor = self.getActiveText().textCursor()
+        self.getActiveText().selectAll()
+        self.getActiveText().setFontPointSize(32)
+        self.getActiveText().setTextCursor(cursor)
+
+    def font_smaller(self):
+        cursor = self.getActiveText().textCursor()
+        self.getActiveText().selectAll()
+        self.getActiveText().setFontPointSize(8)
+        self.getActiveText().setTextCursor(cursor)
 
 def main():
 
