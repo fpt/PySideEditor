@@ -7,6 +7,7 @@
 
 from PySide import QtCore, QtGui
 from PySide.QtCore import Qt
+from PySide.QtGui import QKeySequence, QPalette
 
 import sys
 import codecs
@@ -16,6 +17,7 @@ class Main(QtGui.QMainWindow):
     def __init__(self, parent = None):
         QtGui.QMainWindow.__init__(self,parent)
 
+        self.DefaultFontSize = 12
         self.filename = ""
 
         self.initUI()
@@ -75,7 +77,7 @@ class Main(QtGui.QMainWindow):
 
         self.fontSmallerAction = QtGui.QAction(QtGui.QIcon("icons/font_smaller.png"), "Use smaller font",self)
         self.fontSmallerAction.setStatusTip("Use smaller font")
-        self.fontSmallerAction.setShortcut("Ctrl+-")
+        self.fontSmallerAction.setShortcut(QKeySequence.ZoomOut)
         self.fontSmallerAction.triggered.connect(self.font_smaller)
 
         # printing
@@ -191,6 +193,13 @@ class Main(QtGui.QMainWindow):
 
         # cursor position
         text.cursorPositionChanged.connect(self.cursorPosition)
+        text.setFontPointSize(self.DefaultFontSize)
+
+        # set color
+        #p = text.palette()
+        #p.setColor(QPalette.Active, QPalette.base(), QColor(240, 240, 255))
+        #p.setColor(QPalette.Inactive, QPalette.base(), QColor(12, 12, 12))
+        #text.setPalette(p)
 
         tab = self.tabWidget.addTab(text, title)
         return text
@@ -264,16 +273,20 @@ class Main(QtGui.QMainWindow):
         self.tabWidget.removeTab(index);
 
     def font_larger(self):
-        cursor = self.getActiveText().textCursor()
-        self.getActiveText().selectAll()
-        self.getActiveText().setFontPointSize(32)
-        self.getActiveText().setTextCursor(cursor)
+        text = self.getActiveText()
+        cursor = text.textCursor()
+        text.selectAll()
+        size = text.fontPointSize()
+        text.setFontPointSize(size + 2)
+        text.setTextCursor(cursor)
 
     def font_smaller(self):
-        cursor = self.getActiveText().textCursor()
-        self.getActiveText().selectAll()
-        self.getActiveText().setFontPointSize(8)
-        self.getActiveText().setTextCursor(cursor)
+        text = self.getActiveText()
+        cursor = text.textCursor()
+        text.selectAll()
+        size = text.fontPointSize()
+        text.setFontPointSize(size - 2)
+        text.setTextCursor(cursor)
 
 def main():
 
